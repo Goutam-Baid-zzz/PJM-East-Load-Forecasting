@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PJM East — Load Forecast Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e12;
+      --panel: #12181f;
+      --panel-raised: #171e26;
+      --amber: #ffb000;
+      --amber-dim: #7a5500;
+      --amber-glow: rgba(255, 176, 0, 0.35);
+      --cyan: #49d3d6;
+      --red: #ff4444;
+      --grid-line: #232b35;
+      --text-primary: #e8e6df;
+      --text-muted: #6b7480;
+      --text-faint: #454e59;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse at top, rgba(255, 176, 0, 0.04), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0px, rgba(255, 255, 255, 0.012) 1px, transparent 1px, transparent 3px);
+      color: var(--text-primary);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .console {
+      width: 100%;
+      max-width: 880px;
+      background: var(--panel);
+      border: 1px solid var(--grid-line);
+      border-radius: 6px;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      overflow: hidden;
+    }
+
+    /* ---- Header / scope trace ---- */
+    .console-header {
+      padding: 22px 28px 0;
+      border-bottom: 1px solid var(--grid-line);
+      position: relative;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .brand {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .brand strong {
+      color: var(--amber);
+    }
+
+    .status-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      border: 1px solid rgba(73, 211, 214, 0.3);
+      background: rgba(73, 211, 214, 0.06);
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .scope-wrap {
+      margin: 14px 0 0;
+      height: 64px;
+      overflow: hidden;
+    }
+
+    .scope-trace {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .scope-line {
+      fill: none;
+      stroke: var(--amber);
+      stroke-width: 1.5;
+      filter: drop-shadow(0 0 4px var(--amber-glow));
+      stroke-dasharray: 6 4;
+      animation: scope-flow 3.5s linear infinite;
+    }
+
+    @keyframes scope-flow {
+      to {
+        stroke-dashoffset: -200;
+      }
+    }
+
+    /* ---- Readout ---- */
+    .readout-section {
+      padding: 32px 28px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--grid-line);
+    }
+
+    .readout-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .readout-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      font-size: clamp(48px, 11vw, 86px);
+      line-height: 1;
+      color: var(--amber);
+      text-shadow:
+        0 0 8px var(--amber-glow),
+        0 0 24px rgba(255, 176, 0, 0.15);
+      letter-spacing: 0.02em;
+      min-height: 1.1em;
+      transition: opacity 0.2s ease;
+    }
+
+    .readout-unit {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 15px;
+      color: var(--amber-dim);
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+    }
+
+    .readout-datetime {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 14px;
+    }
+
+    .gauge-track {
+      margin: 22px auto 0;
+      max-width: 420px;
+      height: 6px;
+      background: var(--grid-line);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--amber));
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .gauge-labels {
+      max-width: 420px;
+      margin: 6px auto 0;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.05em;
+    }
+
+    /* ---- Controls ---- */
+    .control-section {
+      padding: 26px 28px;
+      border-bottom: 1px solid var(--grid-line);
+    }
+
+    .control-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .field label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field input[type="datetime-local"] {
+      width: 100%;
+      background: var(--panel-raised);
+      border: 1px solid var(--grid-line);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      padding: 11px 12px;
+      outline: none;
+      color-scheme: dark;
+    }
+
+    .field input[type="datetime-local"]:focus {
+      border-color: var(--amber-dim);
+      box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.12);
+    }
+
+    button.run-btn {
+      background: var(--amber);
+      color: #1a1200;
+      border: none;
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 12px 22px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+
+    button.run-btn:hover {
+      box-shadow: 0 0 20px var(--amber-glow);
+    }
+
+    button.run-btn:active {
+      transform: scale(0.98);
+    }
+
+    button.run-btn:disabled {
+      background: var(--amber-dim);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .range-note {
+      margin-top: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: 0.02em;
+    }
+
+    .range-note span {
+      color: var(--cyan);
+    }
+
+    /* ---- Error / fault panel ---- */
+    .fault-panel {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: rgba(255, 68, 68, 0.06);
+      border: 1px solid rgba(255, 68, 68, 0.35);
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+      color: #ff8a8a;
+      line-height: 1.5;
+    }
+
+    .fault-panel.visible {
+      display: block;
+    }
+
+    .fault-panel strong {
+      color: var(--red);
+      letter-spacing: 0.05em;
+    }
+
+    /* ---- Footer / tech stack ---- */
+    .footer {
+      padding: 18px 28px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .footer-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+
+    .chip {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      border: 1px solid var(--grid-line);
+      background: var(--panel-raised);
+      padding: 4px 9px;
+      border-radius: 3px;
+      letter-spacing: 0.03em;
+    }
+
+    @media (max-width: 480px) {
+
+      .console-header,
+      .readout-section,
+      .control-section,
+      .footer {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .control-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button.run-btn {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scope-line {
+        animation: none;
+      }
+
+      .gauge-fill {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="console">
+
+    <div class="console-header">
+      <div class="header-top">
+        <div class="brand"><strong>PJM EAST</strong> · LOAD FORECAST TERMINAL</div>
+        <div class="status-tag">Historical Simulation</div>
+      </div>
+      <div class="scope-wrap">
+        <svg class="scope-trace" viewBox="0 0 400 64" preserveAspectRatio="none">
+          <polyline class="scope-line"
+            points="0,40 20,38 40,42 60,20 80,45 100,30 120,50 140,15 160,35 180,48 200,25 220,40 240,10 260,42 280,30 300,48 320,18 340,38 360,28 380,45 400,32" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="readout-section">
+      <div class="readout-label">Predicted Load</div>
+      <div class="readout-value" id="readoutValue">— — — — —</div>
+      <div class="readout-unit">MEGAWATTS</div>
+      <div class="readout-datetime" id="readoutDatetime">Awaiting forecast request</div>
+
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gaugeFill"></div>
+      </div>
+      <div class="gauge-labels">
+        <span>17,500 MW</span>
+        <span>SYSTEM RANGE</span>
+        <span>54,000 MW</span>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <div class="control-row">
+        <div class="field">
+          <label for="datetimeInput">Target date &amp; hour</label>
+          <input type="datetime-local" id="datetimeInput" min="2017-01-08T00:00" max="2018-08-03T00:00"
+            value="2017-07-15T14:00" step="3600">
+        </div>
+        <button class="run-btn" id="runBtn">Run Forecast</button>
+      </div>
+      <div class="range-note">
+        Valid instrument range: <span>Jan 8, 2017</span> — <span>Aug 3, 2018</span>.
+        Model trained on PJM East hourly load + Philadelphia weather archive; this range reflects seeded cache history,
+        not real-time data.
+      </div>
+      <div class="fault-panel" id="faultPanel"></div>
+    </div>
+
+    <div class="footer">
+      <span class="footer-label">Pipeline —</span>
+      <span class="chip">S3</span>
+      <span class="chip">Glue ETL</span>
+      <span class="chip">SageMaker</span>
+      <span class="chip">Lambda</span>
+      <span class="chip">API Gateway</span>
+      <span class="chip">DynamoDB</span>
+    </div>
+
+  </div>
+
+  <script>
+    // ---- Configuration ----
+    const API_URL = "https://es7ix1oeoe.execute-api.us-east-1.amazonaws.com/prod/forecast";
+    const GAUGE_MIN = 17500;
+    const GAUGE_MAX = 54000;
+
+    const datetimeInput = document.getElementById("datetimeInput");
+    const runBtn = document.getElementById("runBtn");
+    const readoutValue = document.getElementById("readoutValue");
+    const readoutDatetime = document.getElementById("readoutDatetime");
+    const gaugeFill = document.getElementById("gaugeFill");
+    const faultPanel = document.getElementById("faultPanel");
+
+    function formatMW(value) {
+      return Math.round(value).toLocaleString("en-US");
+    }
+
+    function animateCounter(target) {
+      const duration = 700;
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        readoutValue.textContent = formatMW(current);
+        if (progress < 1) requestAnimationFrame(tick);
+        else readoutValue.textContent = formatMW(target);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function showFault(message) {
+      faultPanel.innerHTML = "<strong>FAULT —</strong> " + message;
+      faultPanel.classList.add("visible");
+    }
+
+    function clearFault() {
+      faultPanel.classList.remove("visible");
+      faultPanel.innerHTML = "";
+    }
+
+    async function runForecast() {
+      const rawValue = datetimeInput.value;
+      if (!rawValue) {
+        showFault("Select a target date and hour before running the forecast.");
+        return;
+      }
+
+      clearFault();
+      runBtn.disabled = true;
+      runBtn.textContent = "Querying…";
+      readoutValue.style.opacity = "0.35";
+
+      // Defensively zero out minutes/seconds — the cache only has exact-hour entries,
+      // and not every browser fully respects the step="3600" restriction on the input.
+      const hourOnly = rawValue.slice(0, 13) + ":00"; // YYYY-MM-DDTHH + ":00"
+      const isoDatetime = hourOnly + ":00"; // -> YYYY-MM-DDTHH:00:00
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ datetime: isoDatetime }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const detail = data.error || "Request failed with no further detail.";
+          showFault(detail);
+          readoutValue.textContent = "— — — — —";
+          readoutDatetime.textContent = "Forecast unavailable";
+          gaugeFill.style.width = "0%";
+          return;
+        }
+
+        const mw = data.prediction_mw;
+        readoutValue.style.opacity = "1";
+        animateCounter(mw);
+
+        const displayDt = new Date(isoDatetime);
+        readoutDatetime.textContent = displayDt.toLocaleString("en-US", {
+          weekday: "short", year: "numeric", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+
+        const pct = Math.max(0, Math.min(100, ((mw - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN)) * 100));
+        gaugeFill.style.width = pct + "%";
+
+      } catch (err) {
+        showFault("Could not reach the forecast API. Check your connection or try again.");
+        readoutValue.textContent = "— — — — —";
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = "Run Forecast";
+        readoutValue.style.opacity = "1";
+      }
+    }
+
+    runBtn.addEventListener("click", runForecast);
+    datetimeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runForecast();
+    });
+  </script>
+
+</body>
+
+</html>
