@@ -6,7 +6,7 @@ storage → trained model → deployed inference API → interactive terminal-st
 frontend. Every layer runs on AWS, sized deliberately to stay near-zero cost
 between uses.
 
-- **Live demo:** https://goutam-baid-zzz.github.io/PJM-East-Load-Forecasting/docs/ </p>
+- **Live demo:** https://goutam-baid-zzz.github.io/PJM-East-Load-Forecasting/ </p>
 - **API:** `https://es7ix1oeoe.execute-api.us-east-1.amazonaws.com/prod/forecast` </p>
 
 <p>
