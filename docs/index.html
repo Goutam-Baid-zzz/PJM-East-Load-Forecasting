@@ -272,6 +272,31 @@
       opacity: 0.6;
     }
 
+    button.secondary-btn {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid rgba(73, 211, 214, 0.4);
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+
+    button.secondary-btn:hover {
+      background: rgba(73, 211, 214, 0.08);
+      box-shadow: 0 0 14px rgba(73, 211, 214, 0.2);
+    }
+
+    button.secondary-btn:active {
+      transform: scale(0.98);
+    }
+
     .range-note {
       margin-top: 12px;
       font-family: 'IBM Plex Mono', monospace;
@@ -305,6 +330,127 @@
     .fault-panel strong {
       color: var(--red);
       letter-spacing: 0.05em;
+    }
+
+    /* ---- Advanced / raw predict panel ---- */
+    .advanced-panel {
+      border-bottom: 1px solid var(--grid-line);
+    }
+
+    .advanced-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .advanced-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .advanced-panel summary:hover {
+      color: var(--cyan);
+    }
+
+    .advanced-panel summary .chevron {
+      font-size: 10px;
+      transition: transform 0.2s ease;
+      color: var(--text-faint);
+    }
+
+    .advanced-panel[open] summary .chevron {
+      transform: rotate(90deg);
+    }
+
+    .advanced-body {
+      padding: 4px 28px 26px;
+    }
+
+    .advanced-desc {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text-faint);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .advanced-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .feature-field label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9.5px;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .feature-field input[type="number"] {
+      width: 100%;
+      background: var(--panel-raised);
+      border: 1px solid var(--grid-line);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+      padding: 8px 9px;
+      outline: none;
+    }
+
+    .feature-field input[type="number"]:focus {
+      border-color: rgba(73, 211, 214, 0.5);
+      box-shadow: 0 0 0 3px rgba(73, 211, 214, 0.1);
+    }
+
+    .feature-field input[type="number"].invalid {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.12);
+    }
+
+    .predict-result-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .predict-result-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .predict-result-value {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--cyan);
+      text-shadow: 0 0 8px rgba(73, 211, 214, 0.3);
     }
 
     /* ---- Footer / tech stack ---- */
@@ -341,7 +487,13 @@
       .console-header,
       .readout-section,
       .control-section,
+      .advanced-body,
       .footer {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .advanced-panel summary {
         padding-left: 18px;
         padding-right: 18px;
       }
@@ -352,6 +504,14 @@
       }
 
       button.run-btn {
+        width: 100%;
+      }
+
+      .advanced-actions {
+        flex-direction: column;
+      }
+
+      .advanced-actions button {
         width: 100%;
       }
     }
@@ -418,6 +578,37 @@
       <div class="fault-panel" id="faultPanel"></div>
     </div>
 
+    <!-- ---- Advanced: raw /predict panel ---- -->
+    <details class="advanced-panel">
+      <summary>
+        <span>▸ Advanced — Raw Feature Input (/predict)</span>
+        <span class="chevron">▶</span>
+      </summary>
+      <div class="advanced-body">
+        <div class="advanced-desc">
+          Calls the underlying <strong style="color: var(--cyan);">/predict</strong> endpoint directly — the caller
+          supplies the model's full 19-feature vector (no date lookup, no DynamoDB, no cache range restriction).
+          This is the raw API contract the <strong style="color: var(--amber);">/forecast</strong> endpoint above
+          builds on top of. Edit any field manually, or load one of 10 preset scenarios below.
+        </div>
+
+        <div class="advanced-actions">
+          <button class="secondary-btn" id="sampleBtn" type="button">⟳ Use Sample Data</button>
+          <button class="run-btn" id="predictBtn" type="button">Run Raw Predict</button>
+        </div>
+
+        <div class="feature-grid" id="featureGrid"></div>
+
+        <div class="predict-result-row">
+          <span class="predict-result-label">Result:</span>
+          <span class="predict-result-value" id="predictResultValue">—</span>
+          <span class="predict-result-label" id="predictResultUnit"></span>
+        </div>
+
+        <div class="fault-panel" id="predictFaultPanel"></div>
+      </div>
+    </details>
+
     <div class="footer">
       <span class="footer-label">Pipeline —</span>
       <span class="chip">S3</span>
@@ -432,10 +623,15 @@
 
   <script>
     // ---- Configuration ----
-    const API_URL = "https://es7ix1oeoe.execute-api.us-east-1.amazonaws.com/prod/forecast";
+    const API_BASE = "https://es7ix1oeoe.execute-api.us-east-1.amazonaws.com/prod";
+    const FORECAST_API_URL = API_BASE + "/forecast";
+    const PREDICT_API_URL = API_BASE + "/predict";
     const GAUGE_MIN = 17500;
     const GAUGE_MAX = 54000;
 
+    // ==========================================================
+    // ---- /forecast panel (date-based, existing behavior) ----
+    // ==========================================================
     const datetimeInput = document.getElementById("datetimeInput");
     const runBtn = document.getElementById("runBtn");
     const readoutValue = document.getElementById("readoutValue");
@@ -447,49 +643,47 @@
       return Math.round(value).toLocaleString("en-US");
     }
 
-    function animateCounter(target) {
+    function animateCounter(el, target) {
       const duration = 700;
       const start = performance.now();
       function tick(now) {
         const progress = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = target * eased;
-        readoutValue.textContent = formatMW(current);
+        el.textContent = formatMW(current);
         if (progress < 1) requestAnimationFrame(tick);
-        else readoutValue.textContent = formatMW(target);
+        else el.textContent = formatMW(target);
       }
       requestAnimationFrame(tick);
     }
 
-    function showFault(message) {
-      faultPanel.innerHTML = "<strong>FAULT —</strong> " + message;
-      faultPanel.classList.add("visible");
+    function showFault(panelEl, message) {
+      panelEl.innerHTML = "<strong>FAULT —</strong> " + message;
+      panelEl.classList.add("visible");
     }
 
-    function clearFault() {
-      faultPanel.classList.remove("visible");
-      faultPanel.innerHTML = "";
+    function clearFault(panelEl) {
+      panelEl.classList.remove("visible");
+      panelEl.innerHTML = "";
     }
 
     async function runForecast() {
       const rawValue = datetimeInput.value;
       if (!rawValue) {
-        showFault("Select a target date and hour before running the forecast.");
+        showFault(faultPanel, "Select a target date and hour before running the forecast.");
         return;
       }
 
-      clearFault();
+      clearFault(faultPanel);
       runBtn.disabled = true;
       runBtn.textContent = "Querying…";
       readoutValue.style.opacity = "0.35";
 
-      // Defensively zero out minutes/seconds — the cache only has exact-hour entries,
-      // and not every browser fully respects the step="3600" restriction on the input.
-      const hourOnly = rawValue.slice(0, 13) + ":00"; // YYYY-MM-DDTHH + ":00"
-      const isoDatetime = hourOnly + ":00"; // -> YYYY-MM-DDTHH:00:00
+      const hourOnly = rawValue.slice(0, 13) + ":00";
+      const isoDatetime = hourOnly + ":00";
 
       try {
-        const response = await fetch(API_URL, {
+        const response = await fetch(FORECAST_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ datetime: isoDatetime }),
@@ -499,7 +693,7 @@
 
         if (!response.ok) {
           const detail = data.error || "Request failed with no further detail.";
-          showFault(detail);
+          showFault(faultPanel, detail);
           readoutValue.textContent = "— — — — —";
           readoutDatetime.textContent = "Forecast unavailable";
           gaugeFill.style.width = "0%";
@@ -508,7 +702,7 @@
 
         const mw = data.prediction_mw;
         readoutValue.style.opacity = "1";
-        animateCounter(mw);
+        animateCounter(readoutValue, mw);
 
         const displayDt = new Date(isoDatetime);
         readoutDatetime.textContent = displayDt.toLocaleString("en-US", {
@@ -520,7 +714,7 @@
         gaugeFill.style.width = pct + "%";
 
       } catch (err) {
-        showFault("Could not reach the forecast API. Check your connection or try again.");
+        showFault(faultPanel, "Could not reach the forecast API. Check your connection or try again.");
         readoutValue.textContent = "— — — — —";
       } finally {
         runBtn.disabled = false;
@@ -533,6 +727,215 @@
     datetimeInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") runForecast();
     });
+
+    // ==========================================================
+    // ---- Advanced /predict panel (raw 19-feature input) ----
+    // ==========================================================
+
+    // Order MUST match the model's expected feature vector exactly.
+    const FEATURE_ORDER = [
+      "hour", "dayofweek", "month", "quarter", "is_weekend", "is_holiday",
+      "hour_sin", "hour_cos", "month_sin", "month_cos", "dow_sin", "dow_cos",
+      "lag_24h", "lag_168h", "rolling_mean_168h", "rolling_std_168h",
+      "temp_f", "hdd", "cdd",
+    ];
+
+    // 10 raw scenario presets. dayofweek follows Python's dt.weekday(): Mon=0 ... Sun=6.
+    // Derived fields (quarter, cyclical encodings, hdd/cdd) are computed on the fly,
+    // so every generated sample is guaranteed internally consistent.
+    const RAW_SAMPLES = [
+      { label: "Winter weekday morning", hour: 7, dayofweek: 1, month: 1, is_weekend: 0, is_holiday: 0, lag_24h: 32000, lag_168h: 31500, rolling_mean_168h: 30800, rolling_std_168h: 1500, temp_f: 28 },
+      { label: "Summer weekday afternoon peak", hour: 15, dayofweek: 3, month: 7, is_weekend: 0, is_holiday: 0, lag_24h: 41000, lag_168h: 40500, rolling_mean_168h: 38000, rolling_std_168h: 2200, temp_f: 92 },
+      { label: "Spring weekend midday", hour: 12, dayofweek: 5, month: 4, is_weekend: 1, is_holiday: 0, lag_24h: 27000, lag_168h: 26800, rolling_mean_168h: 27500, rolling_std_168h: 1200, temp_f: 62 },
+      { label: "Winter holiday evening (Sun)", hour: 19, dayofweek: 6, month: 12, is_weekend: 1, is_holiday: 1, lag_24h: 33000, lag_168h: 32500, rolling_mean_168h: 31000, rolling_std_168h: 1600, temp_f: 25 },
+      { label: "Fall weekday night, low load", hour: 3, dayofweek: 2, month: 10, is_weekend: 0, is_holiday: 0, lag_24h: 22000, lag_168h: 21800, rolling_mean_168h: 23000, rolling_std_168h: 900, temp_f: 48 },
+      { label: "Summer weekend evening", hour: 20, dayofweek: 5, month: 8, is_weekend: 1, is_holiday: 0, lag_24h: 37000, lag_168h: 36500, rolling_mean_168h: 35000, rolling_std_168h: 2000, temp_f: 85 },
+      { label: "Spring weekday morning ramp", hour: 8, dayofweek: 2, month: 5, is_weekend: 0, is_holiday: 0, lag_24h: 29000, lag_168h: 28800, rolling_mean_168h: 28500, rolling_std_168h: 1300, temp_f: 58 },
+      { label: "Winter weekend night (Sun)", hour: 2, dayofweek: 6, month: 2, is_weekend: 1, is_holiday: 0, lag_24h: 26000, lag_168h: 25800, rolling_mean_168h: 27000, rolling_std_168h: 1100, temp_f: 20 },
+      { label: "Summer weekday extreme heat", hour: 16, dayofweek: 1, month: 7, is_weekend: 0, is_holiday: 0, lag_24h: 43000, lag_168h: 42500, rolling_mean_168h: 39000, rolling_std_168h: 2500, temp_f: 98 },
+      { label: "Fall holiday evening (Thanksgiving)", hour: 18, dayofweek: 3, month: 11, is_weekend: 0, is_holiday: 1, lag_24h: 30000, lag_168h: 29500, rolling_mean_168h: 29000, rolling_std_168h: 1400, temp_f: 45 },
+    ];
+
+    const HDD_CDD_BASE = 65;
+    let sampleCursor = 0;
+
+    // Physical bounds for every feature — used both as HTML min/max/step attributes
+    // and for the pre-submit validation check, so the model never gets fed
+    // combinations it was never trained on (e.g. hour=28, quarter=-4).
+    const FEATURE_BOUNDS = {
+      hour: { min: 0, max: 23, integer: true },
+      dayofweek: { min: 0, max: 6, integer: true },
+      month: { min: 1, max: 12, integer: true },
+      quarter: { min: 1, max: 4, integer: true },
+      is_weekend: { min: 0, max: 1, integer: true, binary: true },
+      is_holiday: { min: 0, max: 1, integer: true, binary: true },
+      hour_sin: { min: -1, max: 1 },
+      hour_cos: { min: -1, max: 1 },
+      month_sin: { min: -1, max: 1 },
+      month_cos: { min: -1, max: 1 },
+      dow_sin: { min: -1, max: 1 },
+      dow_cos: { min: -1, max: 1 },
+      lag_24h: { min: 0, max: 100000 },
+      lag_168h: { min: 0, max: 100000 },
+      rolling_mean_168h: { min: 0, max: 100000 },
+      rolling_std_168h: { min: 0, max: 10000 },
+      temp_f: { min: -20, max: 120 },
+      hdd: { min: 0, max: 100 },
+      cdd: { min: 0, max: 100 },
+    };
+
+    function computeFullFeatures(raw) {
+      const quarter = Math.floor((raw.month - 1) / 3) + 1;
+      const hour_sin = Math.sin(2 * Math.PI * raw.hour / 24);
+      const hour_cos = Math.cos(2 * Math.PI * raw.hour / 24);
+      const month_sin = Math.sin(2 * Math.PI * raw.month / 12);
+      const month_cos = Math.cos(2 * Math.PI * raw.month / 12);
+      const dow_sin = Math.sin(2 * Math.PI * raw.dayofweek / 7);
+      const dow_cos = Math.cos(2 * Math.PI * raw.dayofweek / 7);
+      const hdd = Math.max(HDD_CDD_BASE - raw.temp_f, 0);
+      const cdd = Math.max(raw.temp_f - HDD_CDD_BASE, 0);
+
+      return {
+        hour: raw.hour, dayofweek: raw.dayofweek, month: raw.month, quarter,
+        is_weekend: raw.is_weekend, is_holiday: raw.is_holiday,
+        hour_sin, hour_cos, month_sin, month_cos, dow_sin, dow_cos,
+        lag_24h: raw.lag_24h, lag_168h: raw.lag_168h,
+        rolling_mean_168h: raw.rolling_mean_168h, rolling_std_168h: raw.rolling_std_168h,
+        temp_f: raw.temp_f, hdd, cdd,
+      };
+    }
+
+    // Build the 19-field input grid once, on load.
+    const featureGrid = document.getElementById("featureGrid");
+    FEATURE_ORDER.forEach((key) => {
+      const wrap = document.createElement("div");
+      wrap.className = "feature-field";
+      const label = document.createElement("label");
+      label.textContent = key;
+      label.setAttribute("for", "feat_" + key);
+      const input = document.createElement("input");
+      input.type = "number";
+      const bounds = FEATURE_BOUNDS[key];
+      input.step = bounds && bounds.integer ? "1" : "any";
+      if (bounds) {
+        input.min = bounds.min;
+        input.max = bounds.max;
+      }
+      input.id = "feat_" + key;
+      input.value = "0";
+      input.addEventListener("input", () => {
+        input.classList.remove("invalid");
+      });
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      featureGrid.appendChild(wrap);
+    });
+
+    function fillFeatureGrid(values) {
+      FEATURE_ORDER.forEach((key) => {
+        const el = document.getElementById("feat_" + key);
+        const v = values[key];
+        el.value = Number.isInteger(v) ? v : Number(v).toFixed(4);
+      });
+    }
+
+    document.getElementById("sampleBtn").addEventListener("click", () => {
+      const raw = RAW_SAMPLES[sampleCursor % RAW_SAMPLES.length];
+      sampleCursor++;
+      const full = computeFullFeatures(raw);
+      fillFeatureGrid(full);
+      clearFault(document.getElementById("predictFaultPanel"));
+    });
+
+    function validateFeatures() {
+      const errors = [];
+
+      FEATURE_ORDER.forEach((key) => {
+        const el = document.getElementById("feat_" + key);
+        const bounds = FEATURE_BOUNDS[key];
+        const value = parseFloat(el.value);
+        el.classList.remove("invalid");
+
+        if (isNaN(value)) {
+          errors.push(key + " is not a number");
+          el.classList.add("invalid");
+          return;
+        }
+        if (!bounds) return;
+
+        if (bounds.binary && value !== 0 && value !== 1) {
+          errors.push(key + " must be exactly 0 or 1 (got " + value + ")");
+          el.classList.add("invalid");
+          return;
+        }
+        if (bounds.integer && !Number.isInteger(value)) {
+          errors.push(key + " must be a whole number (got " + value + ")");
+          el.classList.add("invalid");
+          return;
+        }
+        if (value < bounds.min || value > bounds.max) {
+          errors.push(key + " must be between " + bounds.min + " and " + bounds.max + " (got " + value + ")");
+          el.classList.add("invalid");
+        }
+      });
+
+      return errors;
+    }
+
+    async function runRawPredict() {
+      const predictBtn = document.getElementById("predictBtn");
+      const predictFaultPanel = document.getElementById("predictFaultPanel");
+      const resultValue = document.getElementById("predictResultValue");
+      const resultUnit = document.getElementById("predictResultUnit");
+
+      clearFault(predictFaultPanel);
+
+      const validationErrors = validateFeatures();
+      if (validationErrors.length > 0) {
+        const preview = validationErrors.slice(0, 4).join(" · ");
+        const suffix = validationErrors.length > 4 ? ` (+${validationErrors.length - 4} more)` : "";
+        showFault(predictFaultPanel, preview + suffix);
+        resultValue.textContent = "—";
+        resultUnit.textContent = "";
+        return;
+      }
+
+      const features = FEATURE_ORDER.map((key) => parseFloat(document.getElementById("feat_" + key).value));
+
+      predictBtn.disabled = true;
+      predictBtn.textContent = "Querying…";
+      resultValue.textContent = "…";
+      resultUnit.textContent = "";
+
+      try {
+        const response = await fetch(PREDICT_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ features }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const detail = data.error || "Request failed with no further detail.";
+          showFault(predictFaultPanel, detail);
+          resultValue.textContent = "—";
+          return;
+        }
+
+        resultValue.textContent = formatMW(data.prediction);
+        resultUnit.textContent = "MW";
+
+      } catch (err) {
+        showFault(predictFaultPanel, "Could not reach the predict API. Check your connection or try again.");
+        resultValue.textContent = "—";
+      } finally {
+        predictBtn.disabled = false;
+        predictBtn.textContent = "Run Raw Predict";
+      }
+    }
+
+    document.getElementById("predictBtn").addEventListener("click", runRawPredict);
   </script>
 
 </body>
